@@ -1,6 +1,6 @@
 from collections import defaultdict
 import math
-from nltk import word_tokenizesent_tokenize
+from nltk import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
 
 
