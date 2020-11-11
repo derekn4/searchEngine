@@ -3,6 +3,7 @@ import re
 from bs4 import BeautifulSoup
 import nltk
 from nltk import word_tokenize, sent_tokenize
+import math
 
 stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren",
               'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
@@ -23,10 +24,9 @@ stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 
 
 word_dict = dict()
 docID_dict = dict()
-
 url_tokens = dict()
-
 docID_lists = []
+
 #def parse(corpusPath):
 #    corpus_size = len([direct for direct in os.listdir(corpusPath) if direct.endswith(".txt")])
 
@@ -42,19 +42,31 @@ def get_tokens(content, words):
 
     for word in words:
         if len(word) >= 2 and not word.isdigit():
-            tokens += [word]
-
+            if word != '':
+                tokens += [word]
     return tokens
 
-def count_freq(tokens):
+def count_freq_url(tokens):
     word_dict1 = dict()
     for word in tokens:
         if word not in stop_words:
             if word not in word_dict1.keys():
-                word_dict1[word] = 1
+                if word != '':
+                    word_dict1[word] = 1
             else:
-                word_dict1[word] += 1
+                if word != '':
+                    word_dict1[word] += 1
     return word_dict1
+
+def count_freq_total(tokens):
+    for word in tokens:
+        if word not in stop_words:
+            if word not in word_dict.keys():
+                if word != '':
+                    word_dict[word] = 1
+            else:
+                if word != '':
+                    word_dict[word] += 1
 
 token_list = []
 count = 0
@@ -69,12 +81,17 @@ for direct in os.listdir("DEV"):
             docID_dict[count] = data["url"]
             content = BeautifulSoup(data['content'], "lxml")
             tokenized_text = get_tokens(content, token_list)
-            token_dict = count_freq(tokenized_text)
+            token_dict = count_freq_url(tokenized_text)
+            count_freq_total(tokenized_text)
             for token in token_dict:
-                url_tokens[token] = [[count], token_dict[token]]
-            if count==200:
+                if token not in url_tokens.keys():
+                    url_tokens[token] = [[count], token_dict[token]]
+                else:
+                    url_tokens[token][0].append(count)
+                    url_tokens[token][1] = word_dict[token] * count/len(url_tokens[token][0])
+            if count==20:
                 break
-    if count==200:
+    if count==20:
         break
 
 sort_dict = {k: v for k, v in sorted(word_dict.items(), key=lambda item: item[1], reverse=True)}
