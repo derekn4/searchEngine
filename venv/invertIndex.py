@@ -13,8 +13,19 @@ class invertIndexer():
         self.__docMags = {}
 
     def BuildIndex(self):
-        count = 0
+        #make dictionary "index"
+        n = 0 #basically docID
+
+        #for all documents do
         for direct in os.listdir("DEV"):
             for i in os.listdir("DEV\\" + direct):
                 if i.endswith(".json"):
-                    count += 1
+                    n += 1
+                    #T (tokenize) parse i json file
+                    #remove duplicates from T
+                    #for all tokens in T do:
+                        #if token not in index.keys()
+                            #Posting = posting_list
+                            #index[t] = [posting]
+                        #index[t].append(posting(n))
+        #return index
