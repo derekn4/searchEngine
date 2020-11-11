@@ -23,6 +23,10 @@ stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 
 
 word_dict = dict()
 docID_dict = dict()
+
+url_tokens = dict()
+
+docID_lists = []
 #def parse(corpusPath):
 #    corpus_size = len([direct for direct in os.listdir(corpusPath) if direct.endswith(".txt")])
 
@@ -42,6 +46,16 @@ def get_tokens(content, words):
 
     return tokens
 
+def count_freq(tokens):
+    word_dict1 = dict()
+    for word in tokens:
+        if word not in stop_words:
+            if word not in word_dict1.keys():
+                word_dict1[word] = 1
+            else:
+                word_dict1[word] += 1
+    return word_dict1
+
 token_list = []
 count = 0
 
@@ -49,27 +63,21 @@ count = 0
 for direct in os.listdir("DEV"):
     for i in os.listdir("DEV\\" + direct):
         if i.endswith(".json"):
+            count += 1  # increment corpus Size
             file = "DEV\\" + direct + "\\" + i  # get file Path
-            data = json.load(open(file))  # json.load file makes dict of file data
+            data = json.load(open(file))        # json.load file makes dict of file data
             docID_dict[count] = data["url"]
-            count+=1                            #increment corpus Size
-            #print(data["url"])
-            #print(data['content'])
             content = BeautifulSoup(data['content'], "lxml")
-            #print(content)
             tokenized_text = get_tokens(content, token_list)
-            #print(tokenized_text)
-            for word in tokenized_text:
-                if word not in stop_words:
-                    if word not in word_dict.keys():
-                        word_dict[word] = 1
-                    else:
-                        word_dict[word] += 1
+            token_dict = count_freq(tokenized_text)
+            for token in token_dict:
+                url_tokens[token] = [[count], token_dict[token]]
             if count==200:
                 break
     if count==200:
         break
 
 sort_dict = {k: v for k, v in sorted(word_dict.items(), key=lambda item: item[1], reverse=True)}
+print(url_tokens)
 print(docID_dict)
 print(sort_dict)
