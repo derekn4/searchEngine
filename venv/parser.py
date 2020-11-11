@@ -5,6 +5,7 @@ from nltk import word_tokenize
 
 #def parse(corpusPath):
 #    corpus_size = len([direct for direct in os.listdir(corpusPath) if direct.endswith(".txt")])
+#hey there
 
 print(os.listdir("DEV"))
 count = 0
