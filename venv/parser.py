@@ -17,3 +17,4 @@ for direct in os.listdir("DEV"):
             count+=1
 
 print(count)
+print(os.listdir("DEV"))
