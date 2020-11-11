@@ -9,7 +9,6 @@ from nltk import word_tokenize, sent_tokenize
 #hey there
 
 
-print(os.listdir("DEV"))
 count = 0
 for direct in os.listdir("DEV"):
     for i in os.listdir("DEV\\" + direct):
