@@ -6,8 +6,7 @@ from nltk import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
 import math
 
-
-sno = nltk.stem.SnowballStemmer('english')
+#nltk.download('punkt')
 
 stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren",
               'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
@@ -26,6 +25,22 @@ stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 
               'would', "wouldn", 'you', "ll", "re", "ve", 'your', 'yours', 'yourself',
               'yourselves']
 
+stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren",
+              'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
+              "can", 'cannot', 'could', "couldn", 'did', "didn", 'do', 'does', "doesn", 'doing', "don",
+              'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn", 'has', "hasn", 'have',
+              "haven't", 'having', 'he', 'her', 'here', 'hers', 'herself', 'him',
+              'himself', 'his', 'how', "how's", 'if', 'in', 'into', 'is',
+              "isn", 'it', 'its', 'itself', 'me', 'more', 'most', "mustn", 'my', 'myself',
+              'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our',
+              'ours', 'ourselves', 'out', 'over', 'own', 'same', "shan't", 'she',
+              'should', "shouldn", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs',
+              'them', 'themselves', 'then', 'there', 'these', 'they',
+              'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn",
+              'we', 'were', "weren", 'what', 'when',
+              'where', 'which', 'while', 'who', 'whom', 'why', 'with', "won",
+              'would', "wouldn", 'you', "ll", "re", "ve", 'your', 'yours', 'yourself',
+              'yourselves']
 
 #Count size of Corpus
 #Make dictiornary of number: json file
@@ -50,28 +65,16 @@ def count_freq_url(tokens):
                 if word != '':
                     word_dict1[word] = 1
                     if word in doc_freq.keys():
-                        # print(word, " : ", sno.stem(word))
                         doc_freq[word] += 1
-                        if sno.stem(word) in doc_freq.keys():
-                            doc_freq[sno.stem(word)] += 1
-                        else:
-                            doc_freq[sno.stem(word)] = 1
                     else:
-                        # print(word, " : ", sno.stem(word))
                         doc_freq[word] = 1
-                        doc_freq[sno.stem(word)] = 1
             else:
                 if word != '':
                     word_dict1[word] += 1
                     if word in doc_freq.keys():
                         doc_freq[word] += 1
-                        if sno.stem(word) in doc_freq.keys():
-                            doc_freq[sno.stem(word)] += 1
-                        else:
-                            doc_freq[sno.stem(word)] = 1
                     else:
                         doc_freq[word] = 1
-                        doc_freq[sno.stem(word)] = 1
     return word_dict1
 
 class ParserScript():
