@@ -31,6 +31,7 @@ stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 
 #Count size of Corpus
 #Make dictiornary of number: json file
 #Make list of Token : [[docIDs where found], tf-dif]
+sno = nltk.stem.SnowballStemmer('english')
 doc_freq = dict()
 def get_tokens(content):
     tokens = []
@@ -52,16 +53,28 @@ def count_freq_url(tokens):
                 if word != '':
                     word_dict1[word] = 1
                     if word in doc_freq.keys():
+                        # print(word, " : ", sno.stem(word))
                         doc_freq[word] += 1
+                        if sno.stem(word) in doc_freq.keys():
+                            doc_freq[sno.stem(word)] += 1
+                        else:
+                            doc_freq[sno.stem(word)] = 1
                     else:
+                        # print(word, " : ", sno.stem(word))
                         doc_freq[word] = 1
+                        doc_freq[sno.stem(word)] = 1
             else:
                 if word != '':
                     word_dict1[word] += 1
                     if word in doc_freq.keys():
                         doc_freq[word] += 1
+                        if sno.stem(word) in doc_freq.keys():
+                            doc_freq[sno.stem(word)] += 1
+                        else:
+                            doc_freq[sno.stem(word)] = 1
                     else:
                         doc_freq[word] = 1
+                        doc_freq[sno.stem(word)] = 1
     return word_dict1
 
 def ParseCorpus(jsonFiles):
