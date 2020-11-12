@@ -6,7 +6,7 @@ from nltk import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
 import math
 
-#nltk.download('punkt')
+
 sno = nltk.stem.SnowballStemmer('english')
 
 stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren",
