@@ -69,7 +69,7 @@ def count_freq_url(tokens):
                     word_dict1[word] += 1
                     if word in doc_freq.keys():
                         doc_freq[word] += 1
-                        if sno.stem(word) in doc_freq.keys():
+                        if sno.stem(word) in doc_freq.keys() and sno.stem(word) != word:
                             doc_freq[sno.stem(word)] += 1
                         else:
                             doc_freq[sno.stem(word)] = 1
