@@ -25,18 +25,6 @@ stop_words = ['about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 
               'would', "wouldn", 'you', "ll", "re", "ve", 'your', 'yours', 'yourself',
               'yourselves']
 
-#word_dict = dict()
-
-token_list = []
-doc_urls = dict()
-doc_freq = dict()
-count = 0
-doc_space = []
-final_list = []
-
-#def parse(corpusPath):
-#    corpus_size = len([direct for direct in os.listdir(corpusPath) if direct.endswith(".txt")])
-
 
 #Count size of Corpus
 #Make dictiornary of number: json file
@@ -73,52 +61,41 @@ def count_freq_url(tokens):
                         doc_freq[word] = 1
     return word_dict1
 
-# def count_freq_total(tokens):
-#     for word in tokens:
-#         if word not in stop_words:
-#             if word not in word_dict.keys():
-#                 if word != '':
-#                     word_dict[word] = 1
-#             else:
-#                 if word != '':
-#                     word_dict[word] += 1
+class ParserScript():
+    def ParseCorpus(self):
+        token_list = []
+        doc_urls = dict()
+        doc_freq = dict()
+        count = 0
+        doc_space = []
+        final_list = []
+        corpus_size = len([f for root, dirs, files in os.walk("DEV") for f in files if f.endswith('.json')])
+        for root, dirs, files in os.walk("DEV"):
+            for f in files:
+                if f.endswith(".json"):
+                    count+=1
+                    data = json.load(open(os.path.join(root,f)))
+                    items = dict(data.items())
+                    doc_urls["doc"+str(count)] = items["url"]
+                    content = BeautifulSoup(items["content"],"lxml")
+                    tokenized_text = get_tokens(content, token_list)
 
-corpus_size = len([f for root, dirs, files in os.walk("DEV") for f in files if f.endswith('.json')])
+                    for tk in tokenized_text:
+                        if tk not in doc_space and tk!="":
+                            doc_space.append(tk)
 
-for root, dirs, files in os.walk("DEV"):
-    for f in files:
-        if f.endswith(".json"):
-            count+=1
-            data = json.load(open(os.path.join(root,f)))
-            items = dict(data.items())
-            doc_urls["doc"+str(count)] = items["url"]
-            content = BeautifulSoup(items["content"],"lxml")
-            tokenized_text = get_tokens(content, token_list)
+                    token_dict = count_freq_url(tokenized_text)
 
-            for tk in tokenized_text:
-                if tk not in doc_space and tk!="":
-                    doc_space.append(tk)
+                    for k,v in token_dict.items():
+                        text = k+' doc'+ str(count) + ":"+str(v)
+                        final_list.append(text)
 
-            token_dict = count_freq_url(tokenized_text)
+        with open("Store/docspace.txt", "w") as f:
+            f.write(str(doc_space))
+        with open("Store/docfrequencies.txt", "w") as g:
+            g.write(str(doc_freq))
+        with open("Store/docurls.txt", "w") as h:
+            h.write(str(doc_urls))
 
-            for k,v in token_dict.items():
-                text = k+' doc'+ str(count) + ":"+str(v)
-                final_list.append(text)
-            if count==50:
-                break
-        if count == 50:
-            break
-    if count == 50:
-        break
-
-for i in final_list:
-    print(i)
-
-
-with open("Store/docspace.txt", "w") as f:
-    f.write(str(doc_space))
-with open("Store/docfrequencies.txt", "w") as g:
-    g.write(str(doc_freq))
-with open("Store/docurls.txt", "w") as h:
-    h.write(str(doc_urls))
-a = (corpus_size, len(doc_space), final_list, doc_space, doc_freq)
+        tup = (corpus_size, len(doc_space), final_list, doc_space, doc_freq)
+        return tup
