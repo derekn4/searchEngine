@@ -5,6 +5,7 @@ from collections import defaultdict
 import math
 from nltk import word_tokenize, sent_tokenize
 from nltk.stem import PorterStemmer
+import nltk
 import glob
 
 #from parser import ParserScript
