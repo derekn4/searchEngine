@@ -17,6 +17,8 @@ sno = nltk.stem.SnowballStemmer('english')
 
 invert_dict = dict()
 doc_freq = dict()
+list_index = ["Store/index1.txt", "Store/index2.txt", "Store/index3.txt",
+              "Store/index4.txt", "Store/index5.txt", "Store/index6.txt"]
 def get_tokens(content):
     tokens = []
     words = []
@@ -29,59 +31,43 @@ def get_tokens(content):
                 tokens += [word]
     return tokens
 
+def count_freq_url(tokens):
+    word_dict1 = dict()
+    for word in tokens:
+        if word not in word_dict1.keys():
+            if word != '':
+                #word_dict1[word] = 1
+                word_dict1[sno.stem(word)] = 1
+        else:
+            if word != '':
+                # word_dict1[word] += 1
+                if sno.stem(word) in word_dict1.keys() and sno.stem(word) != word:
+                    word_dict1[sno.stem(word)] += 1
+                else:
+                    word_dict1[sno.stem(word)] = 1
+
+        if word in doc_freq.keys():
+            #doc_freq[word] += 1
+            if sno.stem(word) in doc_freq.keys() and sno.stem(word) != word:
+                doc_freq[sno.stem(word)] += 1
+            else:
+                doc_freq[sno.stem(word)] = 1
+        else:
+            #doc_freq[word] = 1
+            doc_freq[sno.stem(word)] = 1
+
+    return word_dict1
+
 # def count_freq_url(tokens):
 #     word_dict1 = dict()
 #     for word in tokens:
 #         if word not in word_dict1.keys():
 #             if word != '':
 #                 word_dict1[word] = 1
-#                 word_dict1[sno.stem(word)] = 1
 #         else:
 #             if word != '':
 #                 word_dict1[word] += 1
-#                 if sno.stem(word) in word_dict1.keys() and sno.stem(word) != word:
-#                     word_dict1[sno.stem(word)] += 1
-#                 else:
-#                     word_dict1[sno.stem(word)] = 1
-#
-#         if word in doc_freq.keys():
-#             doc_freq[word] += 1
-#             if sno.stem(word) in doc_freq.keys() and sno.stem(word) != word:
-#                 doc_freq[sno.stem(word)] += 1
-#             else:
-#                 doc_freq[sno.stem(word)] = 1
-#         else:
-#             doc_freq[word] = 1
-#             doc_freq[sno.stem(word)] = 1
 #     return word_dict1
-def count_freq_url(tokens):
-    word_dict1 = dict()
-    for word in tokens:
-        if word not in word_dict1.keys():
-            if word != '':
-                word_dict1[word] = 1
-                # if word in doc_freq.keys():
-                #     doc_freq[word] += 1
-                #     if sno.stem(word) in doc_freq.keys():
-                #         doc_freq[sno.stem(word)] += 1
-                #     else:
-                #         doc_freq[sno.stem(word)] = 1
-                # else:
-                #     doc_freq[word] = 1
-                #     doc_freq[sno.stem(word)] = 1
-        else:
-            if word != '':
-                word_dict1[word] += 1
-                # if word in doc_freq.keys():
-                #     doc_freq[word] += 1
-                #     if sno.stem(word) in doc_freq.keys() and sno.stem(word) != word:
-                #         doc_freq[sno.stem(word)] += 1
-                #     else:
-                #         doc_freq[sno.stem(word)] = 1
-                # else:
-                #     doc_freq[word] = 1
-                #     doc_freq[sno.stem(word)] = 1
-    return word_dict1
 
 def mergeIndex(temp, index):
     temp_index = open(temp, "r")
@@ -135,7 +121,7 @@ def BuildIndex(tks, file, corpusSize, docID, count):
         else:
             invert_dict[t].append(docID+":"+str(frq))
 
-    if count%1000==0:
+    if count%10000==0:
         temp_index.write(str(invert_dict) + "\n")
         temp_index.close()
         invert_dict = dict()
@@ -163,8 +149,11 @@ def ParseCorpus(jsonFiles):
 
             token_dict = count_freq_url(tokenized_text)
 
-            sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0], reverse=True)}
-            BuildIndex(sort_dict, "Store/temp_index.txt", corpus_size, "doc"+str(count), count)
+            sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0].lower())}
+            i = count//10000
+            file = list_index[i]
+            BuildIndex(sort_dict, file, corpus_size, "doc"+str(count), count)
+
 
             if count%100==0:
                 print(count)
@@ -172,34 +161,11 @@ def ParseCorpus(jsonFiles):
             continue
     # with open("Store/docspace.txt", "w") as f:
     #     f.write(str(doc_space))
-    with open("Store/docfrequencies.txt", "w") as g:
+    with open("Store/docfrequencies2.txt", "w") as g:
         g.write(str(doc_freq))
-    with open("Store/docurls.txt", "w") as h:
+    with open("Store/docurls2.txt", "w") as h:
         h.write(str(doc_urls))
 
-    #tup = (corpus_size, len(doc_space), final_list, doc_freq)
-    #return tup
-
-
-# ps = PorterStemmer()
-# class invertIndexer():
-#     def __init__(self):
-#         self.__dict = defaultdict(list)
-#         self.__docMags = {}
-#
-#     def BuildIndex(self, tks, file, corpusSize, docfreq):
-#         index = open(file, 'w')
-#         n = 0                           #basically docID
-#         for t in tks:
-#             #Token + ' doc' + str(count) + ":" + doc_freq
-#             t = t.split()               #[token, doc1:freq]
-#             t2 = t[1].split(":")        #[doc1, freq]
-#             self.tfidf = docfreq[t[0]]  #t2[1]
-#
-#             self.__dict[t[0]].append(t2[0]+":"+str(self.tfidf)) #inverted Index
-#                                         #{token : [doc1:freq, doc2:freq2]}
-#         index.write(str(dict(self.__dict)))
-#         index.close()
 
 tempindexfile = "Store/temp_index.txt"
 indexfile = "Store/index.txt"
