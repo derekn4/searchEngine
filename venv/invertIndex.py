@@ -10,15 +10,22 @@ from itertools import chain
 import glob
 import ast
 
-#Count size of Corpus
-#Make dictiornary of number: json file
-#Make list of Token : [[docIDs where found], tf-dif]
+'''
+Derek Nguyen - 44096504
+Alex Meng - 12907102
+'''
+
+# Count size of Corpus
+# Make dictiornary of number: json file
+# Make list of Token : [[docIDs where found], tf-dif]
 sno = nltk.stem.SnowballStemmer('english')
 
 invert_dict = dict()
 doc_freq = dict()
-list_index = ["Store/index1.txt", "Store/index2.txt", "Store/index3.txt",
-              "Store/index4.txt", "Store/index5.txt", "Store/index6.txt"]
+storage_index_file = []
+index_file_count = 0
+index_list = []
+
 def get_tokens(content):
     tokens = []
     words = []
@@ -28,8 +35,9 @@ def get_tokens(content):
 
     for word in words:
         if len(word) >= 2 and not word.isdigit():
-                tokens += [word]
+            tokens += [word]
     return tokens
+
 
 def count_freq_url(tokens):
     word_dict1 = dict()
@@ -58,17 +66,6 @@ def count_freq_url(tokens):
 
     return word_dict1
 
-# def count_freq_url(tokens):
-#     word_dict1 = dict()
-#     for word in tokens:
-#         if word not in word_dict1.keys():
-#             if word != '':
-#                 word_dict1[word] = 1
-#         else:
-#             if word != '':
-#                 word_dict1[word] += 1
-#     return word_dict1
-
 def mergeIndex(temp, index):
     temp_index = open(temp, "r")
     temp2 = open("Store/temp_index2.txt", "a+")
@@ -82,20 +79,20 @@ def mergeIndex(temp, index):
     for t in temp_index:
         res = ast.literal_eval(t)
         temp_list.append(res)
-    #print(len(temp_list))
+    # print(len(temp_list))
 
     merge = temp_list[0]
-    while count<len(temp_list):
+    while count < len(temp_list):
         count += 1
-        for k,v in chain(merge.items(), temp_list[count].items()):
+        for k, v in chain(merge.items(), temp_list[count].items()):
             if k not in merge.keys():
                 merge[k] = v
             else:
                 merge[k].extend(v)
-        if count%15==0:
+        if count % 15 == 0:
             temp2.write(str(merge) + "\n")
             merge = dict()
-        if count==len(temp_list)-1:
+        if count == len(temp_list) - 1:
             temp2.write(str(merge) + "\n")
             merge = dict()
 
@@ -103,40 +100,49 @@ def mergeIndex(temp, index):
         res = ast.literal_eval(t)
         temp2_list.append(res)
 
-    print(len(temp2_list))
-    print("hello")
     # merge = dict(merge)
     # index_file.write(str(merge) + "\n")
     # index_file.close()
     temp_index.close()
 
 
-
 def BuildIndex(tks, file, corpusSize, docID, count):
+    global index_file_count
+    global index_list
+
     temp_index = open(file, 'a')
+
     global invert_dict
-    for t,frq in tks.items():
+    for t, frq in tks.items():
         if t not in invert_dict:
             invert_dict[t] = [docID + ":" + str(frq)]
         else:
-            invert_dict[t].append(docID+":"+str(frq))
+            invert_dict[t].append(docID + ":" + str(frq))
 
-    if count%10000==0:
+    if count % 10000 == 0:
+        index_list.extend(file)
         temp_index.write(str(invert_dict) + "\n")
         temp_index.close()
         invert_dict = dict()
 
-    elif count==corpusSize:
+        index_file_count += 1
+
+    elif count == corpusSize:
+        index_list.extend(file)
         temp_index.write(str(invert_dict) + "\n")
         temp_index.close()
         invert_dict = dict()
+
+        index_file_count += 1
+
 
 def ParseCorpus(jsonFiles):
     doc_urls = dict()
     count = 0
     corpus_size = len(jsonFiles)
+    global index_file_count
 
-    #try...except
+    # try...except
     for f in jsonFiles:
         try:
             count += 1
@@ -149,21 +155,16 @@ def ParseCorpus(jsonFiles):
 
             token_dict = count_freq_url(tokenized_text)
 
-            sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0].lower())}
-            i = count//10000
-            file = list_index[i]
-            BuildIndex(sort_dict, file, corpus_size, "doc"+str(count), count)
+            sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0], reverse=True)}
+            BuildIndex(sort_dict, 'Store/index' + str(index_file_count) + '.txt', corpus_size, "doc" + str(count), count)
 
-
-            if count%100==0:
+            if count % 100 == 0:
                 print(count)
         except:
             continue
-    # with open("Store/docspace.txt", "w") as f:
-    #     f.write(str(doc_space))
-    with open("Store/docfrequencies2.txt", "w") as g:
+    with open("Store/docfrequencies.txt", "w") as g:
         g.write(str(doc_freq))
-    with open("Store/docurls2.txt", "w") as h:
+    with open("Store/docurls.txt", "w") as h:
         h.write(str(doc_urls))
 
 
@@ -173,9 +174,8 @@ indexfile = "Store/index.txt"
 corpusPaths = glob.glob("DEV\*\*.json")
 ParseCorpus(corpusPaths)
 
-#mergeIndex(tempindexfile, indexfile)
+# mergeIndex(tempindexfile, indexfile)
 
-#open the temp_index.txt
-#turn str into dict
-#merge with defaultdict + chain
-
+# open the temp_index.txt
+# turn str into dict
+# merge with defaultdict + chain
