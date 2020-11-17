@@ -54,6 +54,7 @@ def count_freq_url(tokens):
             if word!="":
                 doc_freq[sno.stem(word)] = 1
     return word_dict1
+
 # def count_freq_url(tokens):
 #     word_dict1 = dict()
 #     for word in tokens:
@@ -184,28 +185,44 @@ def ParseCorpus(jsonFiles):
 
 def queryDatabase(index_list):
     query = input("Search the index(type quit to exit): ")
-    
+
     if query=="quit":
         exit()
 
     search = query.split()
 
     query_dict = dict()
+
     for database in index_list:
         file = open(database, "r")
         for t in file:
             res = ast.literal_eval(t)
 
         for q in search:
-            if q in res.keys():
-                if q not in query_dict.keys():
-                    query_dict[q] = res[q]
-                else:
-                    query_dict[q].extend(res[q])
+            token_freq = dict()
 
-    for k,v in query_dict.items():
-        #find top 5 querys where BOTH are in
-        pass
+            if q in res.keys():
+                for freq in res[q]:
+                    docs = freq.split(":")
+                    token_freq[docs[0]] = int(docs[1])
+                if q not in query_dict.keys():
+                    query_dict[q] = token_freq
+                else:
+                    query_dict[q].update(token_freq)
+        file.close()
+
+    final = dict()
+    for q in range(len(search)):
+        for doc in query_dict[search[q]].keys():
+            if q+1<=len(search)-1:
+                if doc in query_dict[search[q+1]].keys():
+                    final[doc] = [(query_dict[search[q]][doc], query_dict[search[q+1]][doc])]
+                else:
+                    final[doc].append((query_dict[search[q]][doc], query_dict[search[q+1]][doc]))
+                    #store k,v
+
+
+
 
 tempindexfile = "Store/temp_index.txt"
 indexfile = "Store/index.txt"
