@@ -26,7 +26,7 @@ final_query_list = []
 final_freq_list = []
 storage_index_file = []
 index_file_count = 0
-index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt","Store\\index5.txt"]
+index_list = []
 
 def get_tokens(content):
     tokens = []
@@ -284,8 +284,8 @@ docfreq = "Store\\docfrequencies2.txt"
 corpusPaths = glob.glob("DEV\*\*.json")
 # ParseCorpus(corpusPaths)
 
-calculatetfidf(index_list, docfreq, len(corpusPaths))
+#calculatetfidf(index_list, docfreq, len(corpusPaths))
 
 # mergeIndex(tempindexfile, indexfile)
-#queryDatabase(index_list)
+queryDatabase(index_list)
 
