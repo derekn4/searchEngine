@@ -22,9 +22,11 @@ sno = nltk.stem.SnowballStemmer('english')
 
 invert_dict = dict()
 doc_freq = dict()
+final_query_list = []
+final_freq_list = []
 storage_index_file = []
 index_file_count = 0
-index_list = []
+index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt","Store\\index5.txt"]
 
 def get_tokens(content):
     tokens = []
@@ -54,33 +56,6 @@ def count_freq_url(tokens):
             if word!="":
                 doc_freq[sno.stem(word)] = 1
     return word_dict1
-
-# def count_freq_url(tokens):
-#     word_dict1 = dict()
-#     for word in tokens:
-#         if word not in word_dict1.keys():
-#             if word != '':
-#                 #word_dict1[word] = 1
-#                 word_dict1[sno.stem(word)] = 1
-#         else:
-#             if word != '':
-#                 # word_dict1[word] += 1
-#                 if sno.stem(word) in word_dict1.keys() and sno.stem(word) != word:
-#                     word_dict1[sno.stem(word)] += 1
-#                 else:
-#                     word_dict1[sno.stem(word)] = 1
-#
-#         if word in doc_freq.keys():
-#             #doc_freq[word] += 1
-#             if sno.stem(word) in doc_freq.keys() and sno.stem(word) != word:
-#                 doc_freq[sno.stem(word)] += 1
-#             else:
-#                 doc_freq[sno.stem(word)] = 1
-#         else:
-#             #doc_freq[word] = 1
-#             doc_freq[sno.stem(word)] = 1
-#
-#     return word_dict1
 
 # def mergeIndex(temp, index):
 #     temp_index = open(temp, "r")
@@ -151,6 +126,41 @@ def BuildIndex(tks, file, corpusSize, docID, count):
 
         index_file_count += 1
 
+def calculatetfidf(index_list, docfreq, corpusSize):
+    corp_freq = open(docfreq, "r")
+
+    for t in corp_freq:
+        freqs = ast.literal_eval(t)
+
+    for database in index_list:
+        file = open(database, "r")
+        count = 0
+
+        for t in file:
+            tk_docs = ast.literal_eval(t)
+
+
+        for k,v in tk_docs.items():
+            if count==10:
+                break
+            for docs in range(len(v)):
+                dfreq = v[docs].split(":")
+                d = dfreq[0]
+                freq = int(dfreq[1])
+                #print(k + "=" + str(freqs[k]))
+                tfidf = round(((1 + math.log(freq))*math.log((corpusSize/freqs[k]))), 2)
+                v[docs] = d + ":" + str(abs(tfidf))
+            count+=1
+        break
+
+    print(tk_docs["6pm"])
+    print(tk_docs["7pm"])
+    print(tk_docs["about"])
+    print(tk_docs["all"])
+    # for k,v in tk_docs.items():
+    #     print("key:", k, " val:",v)
+
+
 
 def ParseCorpus(jsonFiles):
     doc_urls = dict()
@@ -189,49 +199,93 @@ def queryDatabase(index_list):
     if query=="quit":
         exit()
 
-    search = query.split()
+    search = [sno.stem(word) for word in query.split()]
+
+    print(search)
 
     query_dict = dict()
-
+    final_dict = dict()
+    query_list = []
+    freq_list = []
     for database in index_list:
         file = open(database, "r")
         for t in file:
             res = ast.literal_eval(t)
 
-        for q in search:
-            token_freq = dict()
+        if search[0] in res.keys():
+            for t in res[search[0]]:
+                dfreq = t.split(":")
+                dtk = dfreq[0]
+                freq = dfreq[1]
+                query_list.append(dtk)
+                freq_list.append(int(freq))
 
-            if q in res.keys():
-                for freq in res[q]:
-                    docs = freq.split(":")
-                    token_freq[docs[0]] = int(docs[1])
-                if q not in query_dict.keys():
-                    query_dict[q] = token_freq
-                else:
-                    query_dict[q].update(token_freq)
+            #token                  #["docID:freq", ...]
+            query_dict[search[0]] = res[search[0]]
+        if len(search)>1:
+            for i in range(1,len(search)):
+                score = []
+                temp = []
+                temp_freq_list = []
+                count = 0
+                if search[i] in res.keys():
+                    for t in res[search[i]]:
+                        dfreq = t.split(":")
+                        dtk = dfreq[0]
+                        temp_freq = dfreq[1]
+                        #lopes docs
+                        temp.append(dtk)
+
+                        #lopes freq
+                        temp_freq_list.append(int(temp_freq))
+
+                while count<len(query_list):
+                    if query_list[count] not in temp:
+                        query_list.pop(count)
+                        freq_list.pop(count)
+                    else:
+                        freq_list[count] += temp_freq_list[temp.index(query_list[count])]
+                        count+=1
+        #print("final query_list3")
+        final_query_list.extend(query_list)
+        final_freq_list.extend(freq_list)
+        if len(final_query_list)==len(final_freq_list):
+            print("Searching...")
         file.close()
 
-    final = dict()
-    for q in range(len(search)):
-        for doc in query_dict[search[q]].keys():
-            if q+1<=len(search)-1:
-                if doc in query_dict[search[q+1]].keys():
-                    final[doc] = [(query_dict[search[q]][doc], query_dict[search[q+1]][doc])]
-                else:
-                    final[doc].append((query_dict[search[q]][doc], query_dict[search[q+1]][doc]))
-                    #store k,v
+    for i in range(len(final_query_list)):
+        final_dict[final_query_list[i]] = final_freq_list[i]
+
+    sort_dict = {k: v for k, v in sorted(final_dict.items(), key=lambda item: item[1], reverse=True)}
+
+    url_file = open("Store\\docurls2.txt", "r")
+    for t in url_file:
+        urls = ast.literal_eval(t)
+
+    sort_count = 0
+    final_docs = []
+    for k,v in sort_dict.items():
+        if sort_count==5:
+            break
+        final_docs.append(urls[k])
+        sort_count+=1
+
+    print()
+    for i in range(len(final_docs)):
+        print(str(i+1) + " : " + final_docs[i])
 
 
 
 
-tempindexfile = "Store/temp_index.txt"
-indexfile = "Store/index.txt"
+tempindexfile = "Store\\temp_index.txt"
+indexfile = "Store\\index.txt"
 
+docfreq = "Store\\docfrequencies2.txt"
 corpusPaths = glob.glob("DEV\*\*.json")
-ParseCorpus(corpusPaths)
+# ParseCorpus(corpusPaths)
+
+calculatetfidf(index_list, docfreq, len(corpusPaths))
 
 # mergeIndex(tempindexfile, indexfile)
+#queryDatabase(index_list)
 
-# open the temp_index.txt
-# turn str into dict
-# merge with defaultdict + chain
