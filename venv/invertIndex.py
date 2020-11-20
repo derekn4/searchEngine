@@ -3,8 +3,6 @@ import re
 from bs4 import BeautifulSoup
 from collections import defaultdict
 import math
-from nltk import word_tokenize, sent_tokenize
-from nltk.stem import PorterStemmer
 import nltk
 from itertools import chain
 import glob
@@ -27,6 +25,8 @@ final_freq_list = []
 storage_index_file = []
 index_file_count = 0
 index_list = []
+#index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt","Store\\index5.txt"]
+merge = defaultdict(list)
 
 def get_tokens(content):
     tokens = []
@@ -39,7 +39,7 @@ def get_tokens(content):
              tokens += [word]
     return tokens
 
-def count_freq_url(tokens):
+def count_freq_url(tokens, size_doc):
     word_dict1 = dict()
     for word in tokens:
         if sno.stem(word) not in word_dict1.keys():
@@ -55,46 +55,13 @@ def count_freq_url(tokens):
         else:
             if word!="":
                 doc_freq[sno.stem(word)] = 1
-    return word_dict1
 
-# def mergeIndex(temp, index):
-#     temp_index = open(temp, "r")
-#     temp2 = open("Store/temp_index2.txt", "a+")
-#     temp2.truncate(0)
-#     index_file = open(index, "w")
-#     temp_list = []
-#     temp2_list = []
-#     count = 0
-#     merge = defaultdict(list)
-#
-#     for t in temp_index:
-#         res = ast.literal_eval(t)
-#         temp_list.append(res)
-#     # print(len(temp_list))
-#
-#     merge = temp_list[0]
-#     while count < len(temp_list):
-#         count += 1
-#         for k, v in chain(merge.items(), temp_list[count].items()):
-#             if k not in merge.keys():
-#                 merge[k] = v
-#             else:
-#                 merge[k].extend(v)
-#         if count % 15 == 0:
-#             temp2.write(str(merge) + "\n")
-#             merge = dict()
-#         if count == len(temp_list) - 1:
-#             temp2.write(str(merge) + "\n")
-#             merge = dict()
-#
-#     for t in temp2:
-#         res = ast.literal_eval(t)
-#         temp2_list.append(res)
-#
-#     # merge = dict(merge)
-#     # index_file.write(str(merge) + "\n")
-#     # index_file.close()
-#     temp_index.close()
+    #CALCULATING TF (for tf-idf)
+    for k,v in word_dict1.items():
+        #tf = count of t in doc / num of tks in doc
+        word_dict1[k] = round((v/size_doc), 2) #--> what if 0?
+
+    return word_dict1
 
 
 def BuildIndex(tks, file, corpusSize, docID, count):
@@ -133,32 +100,23 @@ def calculatetfidf(index_list, docfreq, corpusSize):
         freqs = ast.literal_eval(t)
 
     for database in index_list:
-        file = open(database, "r")
+        file = open(database, "a+")
         count = 0
 
         for t in file:
             tk_docs = ast.literal_eval(t)
 
-
         for k,v in tk_docs.items():
-            if count==10:
-                break
             for docs in range(len(v)):
                 dfreq = v[docs].split(":")
                 d = dfreq[0]
                 freq = int(dfreq[1])
-                #print(k + "=" + str(freqs[k]))
-                tfidf = round(((1 + math.log(freq))*math.log((corpusSize/freqs[k]))), 2)
+                tfidf = round(((1 + math.log(freq)) * math.log((corpusSize/(freqs[k]+1)))),2)
                 v[docs] = d + ":" + str(abs(tfidf))
-            count+=1
-        break
 
-    print(tk_docs["6pm"])
-    print(tk_docs["7pm"])
-    print(tk_docs["about"])
-    print(tk_docs["all"])
-    # for k,v in tk_docs.items():
-    #     print("key:", k, " val:",v)
+        file.truncate(0)
+        file.write(str(tk_docs))
+        file.close()
 
 
 
@@ -178,8 +136,8 @@ def ParseCorpus(jsonFiles):
 
             content = BeautifulSoup(items["content"], "lxml")
             tokenized_text = get_tokens(content.text.lower())
-
-            token_dict = count_freq_url(tokenized_text)
+            size_doc = len(tokenized_text)
+            token_dict = count_freq_url(tokenized_text, size_doc)
 
             sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0].lower())}
             BuildIndex(sort_dict, 'Store/index' + str(index_file_count) + '.txt', corpus_size, "doc" + str(count), count)
@@ -188,104 +146,113 @@ def ParseCorpus(jsonFiles):
                 print(count)
         except:
             continue
-    with open("Store/docfrequencies2.txt", "w") as g:
+
+    with open("Store/docfrequencies.txt", "w") as g:
         g.write(str(doc_freq))
-    with open("Store/docurls2.txt", "w") as h:
+    with open("Store/docurls.txt", "w") as h:
         h.write(str(doc_urls))
 
-def queryDatabase(index_list):
-    query = input("Search the index(type quit to exit): ")
+def mergeIndex(index_list):
+    global merge
+    count = 0
 
-    if query=="quit":
-        exit()
+    while count<len(index_list):
+        curr_index = open(index_list[count], "r")
+        count+=1
+        next_index = open(index_list[count], "r")
+        for t in curr_index:
+            res1 = ast.literal_eval(t)
 
-    search = [sno.stem(word) for word in query.split()]
+        for t in next_index:
+            res2 = ast.literal_eval(t)
 
-    print(search)
+        for k, v in chain(res1.items(), res2.items()):
+            if k not in merge.keys():
+                merge[k] = v
+            else:
+                merge[k].extend(v)
+        count+=1
 
-    query_dict = dict()
-    final_dict = dict()
-    query_list = []
-    freq_list = []
-    for database in index_list:
-        file = open(database, "r")
-        for t in file:
-            res = ast.literal_eval(t)
 
-        if search[0] in res.keys():
-            for t in res[search[0]]:
+def queryDatabase():
+    global merge
+    while True:
+        query = input("Search the index(type quit to exit): ")
+
+        if query=="quit":
+            exit()
+
+        search = [sno.stem(word) for word in query.split()]
+
+        query_dict = dict()
+        final_dict = dict()
+        query_list = []
+        freq_list = []
+
+        if search[0] in merge.keys():
+            for t in merge[search[0]]:
                 dfreq = t.split(":")
                 dtk = dfreq[0]
                 freq = dfreq[1]
                 query_list.append(dtk)
                 freq_list.append(int(freq))
 
-            #token                  #["docID:freq", ...]
-            query_dict[search[0]] = res[search[0]]
-        if len(search)>1:
-            for i in range(1,len(search)):
-                score = []
+        if len(search) > 1:
+            for i in range(1, len(search)):
                 temp = []
                 temp_freq_list = []
                 count = 0
-                if search[i] in res.keys():
-                    for t in res[search[i]]:
+                if search[i] in merge.keys():
+                    for t in merge[search[i]]:
                         dfreq = t.split(":")
                         dtk = dfreq[0]
                         temp_freq = dfreq[1]
-                        #lopes docs
                         temp.append(dtk)
-
-                        #lopes freq
                         temp_freq_list.append(int(temp_freq))
 
-                while count<len(query_list):
+                while count < len(query_list):
                     if query_list[count] not in temp:
                         query_list.pop(count)
                         freq_list.pop(count)
                     else:
                         freq_list[count] += temp_freq_list[temp.index(query_list[count])]
-                        count+=1
-        #print("final query_list3")
-        final_query_list.extend(query_list)
-        final_freq_list.extend(freq_list)
-        if len(final_query_list)==len(final_freq_list):
-            print("Searching...")
-        file.close()
-
-    for i in range(len(final_query_list)):
-        final_dict[final_query_list[i]] = final_freq_list[i]
-
-    sort_dict = {k: v for k, v in sorted(final_dict.items(), key=lambda item: item[1], reverse=True)}
-
-    url_file = open("Store\\docurls2.txt", "r")
-    for t in url_file:
-        urls = ast.literal_eval(t)
-
-    sort_count = 0
-    final_docs = []
-    for k,v in sort_dict.items():
-        if sort_count==5:
-            break
-        final_docs.append(urls[k])
-        sort_count+=1
-
-    print()
-    for i in range(len(final_docs)):
-        print(str(i+1) + " : " + final_docs[i])
+                        count += 1
 
 
+        for i in range(len(query_list)):
+            final_dict[query_list[i]] = freq_list[i]
 
+        sort_dict = {k: v for k, v in sorted(final_dict.items(), key=lambda item: item[1], reverse=True)}
+        url_file = open("Store\\docurls.txt", "r")
+        for t in url_file:
+            urls = ast.literal_eval(t)
 
-tempindexfile = "Store\\temp_index.txt"
-indexfile = "Store\\index.txt"
+        sort_count = 0
+        final_docs = []
+        for k,v in sort_dict.items():
+            if sort_count==5:
+                break
+            final_docs.append(urls[k])
+            sort_count+=1
 
-docfreq = "Store\\docfrequencies2.txt"
+        print("Results for ", query, ": \n")
+        for i in range(len(final_docs)):
+            print(str(i+1) + " : " + final_docs[i])
+
+            
+#might just get rid of docfreq variable b/c global variable doc_freq
+docfreq = "Store\\docfrequencies.txt"
 corpusPaths = glob.glob("DEV\*\*.json")
-# ParseCorpus(corpusPaths)
 
-#calculatetfidf(index_list, docfreq, len(corpusPaths))
+#1: parse files and builds partial inverted indexes {token: "docId:tf
+ParseCorpus(corpusPaths)
 
-# mergeIndex(tempindexfile, indexfile)
-queryDatabase(index_list)
+#2: goes through the partial inverted indexes and calculates tf-idf scores
+calculatetfidf(index_list, docfreq, len(corpusPaths))
+
+#3: merges the partial indexes into 1 global index variable
+mergeIndex(index_list)
+
+#4: query Database (REQUIRED: search is <1 second aka ~300ms)
+queryDatabase()
 
