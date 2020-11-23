@@ -24,8 +24,9 @@ final_query_list = []
 final_freq_list = []
 storage_index_file = []
 index_file_count = 0
-index_list = []
-#index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt","Store\\index5.txt"]
+#index_list = []
+#index_list = ["Store\\index0.txt"]
+index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt", "Store\\index5.txt"]
 merge = defaultdict(list)
 
 def get_tokens(content):
@@ -63,7 +64,6 @@ def count_freq_url(tokens, size_doc):
 
     return word_dict1
 
-
 def BuildIndex(tks, file, corpusSize, docID, count):
     global index_file_count
     global index_list
@@ -77,8 +77,9 @@ def BuildIndex(tks, file, corpusSize, docID, count):
         else:
             invert_dict[t].append(docID + ":" + str(frq))
 
+    #if count % 1000 == 0:
     if count % 10000 == 0:
-        index_list.extend(file)
+        index_list.append(file)
         temp_index.write(str(invert_dict) + "\n")
         temp_index.close()
         invert_dict = dict()
@@ -86,37 +87,43 @@ def BuildIndex(tks, file, corpusSize, docID, count):
         index_file_count += 1
 
     elif count == corpusSize:
-        index_list.extend(file)
+        index_list.append(file)
         temp_index.write(str(invert_dict) + "\n")
         temp_index.close()
         invert_dict = dict()
 
         index_file_count += 1
 
-def calculatetfidf(index_list, docfreq, corpusSize):
+def calculatetfidf(docfreq, corpusSize):
+    global index_list
     corp_freq = open(docfreq, "r")
+    res = dict()
 
     for t in corp_freq:
         freqs = ast.literal_eval(t)
+    count = 0
 
-    for database in index_list:
-        file = open(database, "a+")
-        count = 0
+    while count < len(index_list):
+        curr_index = open(index_list[count], "r")
 
-        for t in file:
-            tk_docs = ast.literal_eval(t)
+        for tk in curr_index:
+            res = ast.literal_eval(tk)
 
-        for k,v in tk_docs.items():
+
+        for k,v in res.items():
             for docs in range(len(v)):
                 dfreq = v[docs].split(":")
                 d = dfreq[0]
-                freq = int(dfreq[1])
-                tfidf = round(((1 + math.log(freq)) * math.log((corpusSize/(freqs[k]+1)))),2)
+                freq = float(dfreq[1])
+                tfidf = round(((1 + freq) * math.log((corpusSize / (freqs[k] + 1)))), 2)
                 v[docs] = d + ":" + str(abs(tfidf))
+                #print(abs(tfidf))
 
-        file.truncate(0)
-        file.write(str(tk_docs))
-        file.close()
+        curr_index.truncate(0)
+        curr_index.write(str(res))
+        curr_index.close()
+
+        count+=1
 
 
 
@@ -140,16 +147,18 @@ def ParseCorpus(jsonFiles):
             token_dict = count_freq_url(tokenized_text, size_doc)
 
             sort_dict = {k: v for k, v in sorted(token_dict.items(), key=lambda item: item[0].lower())}
-            BuildIndex(sort_dict, 'Store/index' + str(index_file_count) + '.txt', corpus_size, "doc" + str(count), count)
+            BuildIndex(sort_dict, 'Store\\index' + str(index_file_count) + '.txt', corpus_size, "doc" + str(count), count)
 
             if count % 100 == 0:
                 print(count)
+            # if count % 2000 == 0:
+            #      break
         except:
             continue
 
-    with open("Store/docfrequencies.txt", "w") as g:
+    with open("Store\\docfrequencies.txt", "w") as g:
         g.write(str(doc_freq))
-    with open("Store/docurls.txt", "w") as h:
+    with open("Store\\docurls.txt", "w") as h:
         h.write(str(doc_urls))
 
 def mergeIndex(index_list):
@@ -227,6 +236,8 @@ def queryDatabase():
         for t in url_file:
             urls = ast.literal_eval(t)
 
+        print(sort_dict)
+
         sort_count = 0
         final_docs = []
         for k,v in sort_dict.items():
@@ -239,20 +250,20 @@ def queryDatabase():
         for i in range(len(final_docs)):
             print(str(i+1) + " : " + final_docs[i])
 
-            
-#might just get rid of docfreq variable b/c global variable doc_freq
+
 docfreq = "Store\\docfrequencies.txt"
 corpusPaths = glob.glob("DEV\*\*.json")
 
+
 #1: parse files and builds partial inverted indexes {token: "docId:tf
-ParseCorpus(corpusPaths)
+#ParseCorpus(corpusPaths)
 
 #2: goes through the partial inverted indexes and calculates tf-idf scores
-calculatetfidf(index_list, docfreq, len(corpusPaths))
+calculatetfidf(docfreq, len(corpusPaths))
 
 #3: merges the partial indexes into 1 global index variable
-mergeIndex(index_list)
+#mergeIndex(index_list)
 
 #4: query Database (REQUIRED: search is <1 second aka ~300ms)
-queryDatabase()
+#queryDatabase()
 
