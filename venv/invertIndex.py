@@ -94,6 +94,7 @@ def BuildIndex(tks, file, corpusSize, docID, count):
 
         index_file_count += 1
 
+
 def calculatetfidf(docfreq, corpusSize):
     global index_list
     corp_freq = open(docfreq, "r")
@@ -101,10 +102,12 @@ def calculatetfidf(docfreq, corpusSize):
 
     for t in corp_freq:
         freqs = ast.literal_eval(t)
+
     count = 0
 
+
     while count < len(index_list):
-        curr_index = open(index_list[count], "r")
+        curr_index = open(index_list[count], "r+")
 
         for tk in curr_index:
             res = ast.literal_eval(tk)
@@ -117,8 +120,8 @@ def calculatetfidf(docfreq, corpusSize):
                 freq = float(dfreq[1])
                 tfidf = round(((1 + freq) * math.log((corpusSize / (freqs[k] + 1)))), 2)
                 v[docs] = d + ":" + str(abs(tfidf))
-                #print(abs(tfidf))
 
+        curr_index.seek(0)
         curr_index.truncate(0)
         curr_index.write(str(res))
         curr_index.close()
@@ -204,7 +207,7 @@ def queryDatabase():
                 dtk = dfreq[0]
                 freq = dfreq[1]
                 query_list.append(dtk)
-                freq_list.append(int(freq))
+                freq_list.append(float(freq))
 
         if len(search) > 1:
             for i in range(1, len(search)):
@@ -217,7 +220,7 @@ def queryDatabase():
                         dtk = dfreq[0]
                         temp_freq = dfreq[1]
                         temp.append(dtk)
-                        temp_freq_list.append(int(temp_freq))
+                        temp_freq_list.append(float(temp_freq))
 
                 while count < len(query_list):
                     if query_list[count] not in temp:
@@ -262,8 +265,8 @@ corpusPaths = glob.glob("DEV\*\*.json")
 calculatetfidf(docfreq, len(corpusPaths))
 
 #3: merges the partial indexes into 1 global index variable
-#mergeIndex(index_list)
+mergeIndex(index_list)
 
 #4: query Database (REQUIRED: search is <1 second aka ~300ms)
-#queryDatabase()
+queryDatabase()
 
