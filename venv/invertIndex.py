@@ -194,13 +194,11 @@ def mergeIndex(index_list):
         sort_v = sorted(v, key=lambda item: float(item.split(":")[1]), reverse=True)
         for i in sort_v:
             final_dict[k].append(i)
-
     merge = final_dict
 
 
 def queryDatabase(urls):
     global merge
-    #global final_dict
     while True:
         query = input("Search the index(type quit to exit): ")
 
@@ -214,12 +212,7 @@ def queryDatabase(urls):
             if q in merge.keys():
                 sort_search[q] = len(merge[q])
 
-        print(sort_search)
-
         search = [k for k,v in sorted(sort_search.items(), key=lambda item: item[1])]
-
-        print(search)
-        #search = sorted(search, key=lambda item: len(item), reverse=True)
 
         query_dict = dict()
         final_dict1 = dict()
@@ -234,19 +227,10 @@ def queryDatabase(urls):
                 query_list.append(dtk)
                 freq_list.append(float(freq))
 
-        #freq_list = freq_list[0:1000]
-        print("SEARCH[0]: ")
-        print(query_list)
-        print(freq_list)
-        print(len(freq_list))
-        print()
+        query_list = query_list[0:1000]
+        freq_list = freq_list[0:1000]
         if len(search) > 1:
             for i in range(1, len(search)):
-                #if len(search[i])>=3:
-                print("SEARCH[", i, "]: ")
-                print("q_list", query_list)
-                print("f_list", freq_list)
-
                 temp = []
                 temp_freq_list = []
                 count = 0
@@ -257,10 +241,6 @@ def queryDatabase(urls):
                         temp_freq = dfreq[1]
                         temp.append(dtk)
                         temp_freq_list.append(float(temp_freq))
-
-                print("t_list", temp)
-                print("tfl_list", temp_freq_list)
-                print()
 
                 while count < len(query_list):
                     if query_list[count] not in temp:
@@ -275,21 +255,18 @@ def queryDatabase(urls):
             final_dict1[query_list[i]] = freq_list[i]
 
         sort_dict = {k: v for k, v in sorted(final_dict1.items(), key=lambda item: item[1], reverse=True)}
-        print()
-        print()
         sort_count = 0
         final_docs = []
-
         for k,v in sort_dict.items():
             if sort_count==5:
                 break
-            print(k)
             final_docs.append(urls[k])
             sort_count+=1
 
         print("Results for ", query, ":")
         for i in range(len(final_docs)):
             print(str(i+1) + " : " + final_docs[i])
+        print()
 
 
 docfreq = "Store\\docfrequencies.txt"
@@ -297,10 +274,10 @@ corpusPaths = glob.glob("DEV\*\*.json")
 
 
 #1: parse files and builds partial inverted indexes {token: "docId:tf
-#ParseCorpus(corpusPaths)
+ParseCorpus(corpusPaths)
 
 #2: goes through the partial inverted indexes and calculates tf-idf scores
-#calculatetfidf(docfreq, len(corpusPaths))
+calculatetfidf(docfreq, len(corpusPaths))
 
 #3: merges the partial indexes into 1 global index variable
 mergeIndex(index_list)
