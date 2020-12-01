@@ -28,6 +28,7 @@ index_file_count = 0
 #index_list = ["Store\\index0.txt"]
 index_list = ["Store\\index0.txt","Store\\index1.txt","Store\\index2.txt","Store\\index3.txt","Store\\index4.txt", "Store\\index5.txt"]
 merge = defaultdict(list)
+final_dict = defaultdict(list)
 
 def get_tokens(content):
     tokens = []
@@ -120,6 +121,7 @@ def calculatetfidf(docfreq, corpusSize):
                 freq = float(dfreq[1])
                 tfidf = round(((1 + freq) * math.log((corpusSize / (freqs[k] + 1)))), 2)
                 v[docs] = d + ":" + str(abs(tfidf))
+            v = sorted(v, key=lambda item: float(item.split(":")[1]), reverse=True)
 
         curr_index.seek(0)
         curr_index.truncate(0)
@@ -164,10 +166,11 @@ def ParseCorpus(jsonFiles):
     with open("Store\\docurls.txt", "w") as h:
         h.write(str(doc_urls))
 
+
 def mergeIndex(index_list):
     global merge
     count = 0
-
+    #final_index = open("Store\\final_index.txt", "a+")
     while count<len(index_list):
         curr_index = open(index_list[count], "r")
         count+=1
@@ -183,21 +186,43 @@ def mergeIndex(index_list):
                 merge[k] = v
             else:
                 merge[k].extend(v)
+
         count+=1
 
+    global final_dict
+    for k,v in merge.items():
+        sort_v = sorted(v, key=lambda item: float(item.split(":")[1]), reverse=True)
+        for i in sort_v:
+            final_dict[k].append(i)
 
-def queryDatabase():
+    merge = final_dict
+
+
+def queryDatabase(urls):
     global merge
+    #global final_dict
     while True:
         query = input("Search the index(type quit to exit): ")
 
         if query=="quit":
             exit()
 
-        search = [sno.stem(word) for word in query.split()]
+        search_l = [sno.stem(word) for word in query.split()]
+        sort_search = {}
+
+        for q in search_l:
+            if q in merge.keys():
+                sort_search[q] = len(merge[q])
+
+        print(sort_search)
+
+        search = [k for k,v in sorted(sort_search.items(), key=lambda item: item[1])]
+
+        print(search)
+        #search = sorted(search, key=lambda item: len(item), reverse=True)
 
         query_dict = dict()
-        final_dict = dict()
+        final_dict1 = dict()
         query_list = []
         freq_list = []
 
@@ -209,8 +234,19 @@ def queryDatabase():
                 query_list.append(dtk)
                 freq_list.append(float(freq))
 
+        #freq_list = freq_list[0:1000]
+        print("SEARCH[0]: ")
+        print(query_list)
+        print(freq_list)
+        print(len(freq_list))
+        print()
         if len(search) > 1:
             for i in range(1, len(search)):
+                #if len(search[i])>=3:
+                print("SEARCH[", i, "]: ")
+                print("q_list", query_list)
+                print("f_list", freq_list)
+
                 temp = []
                 temp_freq_list = []
                 count = 0
@@ -222,6 +258,10 @@ def queryDatabase():
                         temp.append(dtk)
                         temp_freq_list.append(float(temp_freq))
 
+                print("t_list", temp)
+                print("tfl_list", temp_freq_list)
+                print()
+
                 while count < len(query_list):
                     if query_list[count] not in temp:
                         query_list.pop(count)
@@ -232,24 +272,22 @@ def queryDatabase():
 
 
         for i in range(len(query_list)):
-            final_dict[query_list[i]] = freq_list[i]
+            final_dict1[query_list[i]] = freq_list[i]
 
-        sort_dict = {k: v for k, v in sorted(final_dict.items(), key=lambda item: item[1], reverse=True)}
-        url_file = open("Store\\docurls.txt", "r")
-        for t in url_file:
-            urls = ast.literal_eval(t)
-
-        print(sort_dict)
-
+        sort_dict = {k: v for k, v in sorted(final_dict1.items(), key=lambda item: item[1], reverse=True)}
+        print()
+        print()
         sort_count = 0
         final_docs = []
+
         for k,v in sort_dict.items():
             if sort_count==5:
                 break
+            print(k)
             final_docs.append(urls[k])
             sort_count+=1
 
-        print("Results for ", query, ": \n")
+        print("Results for ", query, ":")
         for i in range(len(final_docs)):
             print(str(i+1) + " : " + final_docs[i])
 
@@ -262,11 +300,15 @@ corpusPaths = glob.glob("DEV\*\*.json")
 #ParseCorpus(corpusPaths)
 
 #2: goes through the partial inverted indexes and calculates tf-idf scores
-calculatetfidf(docfreq, len(corpusPaths))
+#calculatetfidf(docfreq, len(corpusPaths))
 
 #3: merges the partial indexes into 1 global index variable
 mergeIndex(index_list)
 
+url_file = open("Store\\docurls.txt", "r")
+for t in url_file:
+    urls = ast.literal_eval(t)
+
 #4: query Database (REQUIRED: search is <1 second aka ~300ms)
-queryDatabase()
+queryDatabase(urls)
 
