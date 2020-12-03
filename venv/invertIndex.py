@@ -39,10 +39,12 @@ def get_tokens(content):
     for word in words:
          if len(word) >= 2 and not word.isdigit():
              tokens += [word]
+
     return tokens
 
 def count_freq_url(tokens, size_doc):
     word_dict1 = dict()
+    word_set = set()
     for word in tokens:
         if sno.stem(word) not in word_dict1.keys():
             if word != '':
@@ -51,12 +53,15 @@ def count_freq_url(tokens, size_doc):
             if word != '':
                 word_dict1[sno.stem(word)] += 1
 
-        if sno.stem(word) in doc_freq.keys():
-            if word!="":
-                doc_freq[sno.stem(word)] += 1
+        word_set.add(sno.stem(word))
+
+    for i in word_set:
+        if i in doc_freq.keys():
+            if i!="":
+                doc_freq[i] += 1
         else:
-            if word!="":
-                doc_freq[sno.stem(word)] = 1
+            if i!="":
+                doc_freq[i] = 1
 
     #CALCULATING TF (for tf-idf)
     for k,v in word_dict1.items():
@@ -78,7 +83,6 @@ def BuildIndex(tks, file, corpusSize, docID, count):
         else:
             invert_dict[t].append(docID + ":" + str(frq))
 
-    #if count % 1000 == 0:
     if count % 10000 == 0:
         index_list.append(file)
         temp_index.write(str(invert_dict) + "\n")
@@ -119,7 +123,12 @@ def calculatetfidf(docfreq, corpusSize):
                 dfreq = v[docs].split(":")
                 d = dfreq[0]
                 freq = float(dfreq[1])
-                tfidf = round(((1 + freq) * math.log((corpusSize / (freqs[k] + 1)))), 2)
+
+                if int(freq)==0:
+                    tfidf = round(((1 + math.log(1)) * math.log((corpusSize / freqs[k]))), 2)
+                else:
+                    tfidf = round(((1 + math.log(freq)) * math.log((corpusSize / freqs[k]))), 2)
+
                 v[docs] = d + ":" + str(abs(tfidf))
             v = sorted(v, key=lambda item: float(item.split(":")[1]), reverse=True)
 
@@ -156,8 +165,6 @@ def ParseCorpus(jsonFiles):
 
             if count % 100 == 0:
                 print(count)
-            # if count % 2000 == 0:
-            #      break
         except:
             continue
 
@@ -274,7 +281,7 @@ corpusPaths = glob.glob("DEV\*\*.json")
 
 
 #1: parse files and builds partial inverted indexes {token: "docId:tf
-ParseCorpus(corpusPaths)
+#ParseCorpus(corpusPaths)
 
 #2: goes through the partial inverted indexes and calculates tf-idf scores
 calculatetfidf(docfreq, len(corpusPaths))
